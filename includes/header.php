@@ -34,7 +34,7 @@ $pageT       = isset($pageTitle) ? sanitize($pageTitle) . ' — ' . APP_NAME : A
     <a class="nav-link <?= $currentPage==='chat'?'active':'' ?>" href="<?= APP_URL ?>/chat.php">Chat</a>
     <?php endif; ?>
     <?php if (isAdmin()): ?>
-    <a class="nav-link" href="<?= APP_URL ?>/admin/">Admin Panel</a>
+    <a class="nav-link" href="<?= APP_URL ?>/admin/index.php">Admin Panel</a>
     <?php endif; ?>
     <?php if (isLoggedIn() && !isAdmin()): ?>
     <a class="nav-link <?= $currentPage==='pesanan'?'active':'' ?>" href="<?= APP_URL ?>/pesanan.php">Riwayat Pesanan</a>
