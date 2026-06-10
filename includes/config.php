@@ -42,7 +42,8 @@ try {
 }
 
 // AUTO-DETECT APP_URL
-$_prot    = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$_prot = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
+         (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
 $_host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $_appAbs  = rtrim(str_replace('\\', '/', realpath(dirname(__DIR__))), '/');
 $_docRoot = rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
