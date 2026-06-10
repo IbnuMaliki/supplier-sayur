@@ -51,6 +51,9 @@ if (empty($_docRoot)) {
     $_docRoot = rtrim(str_replace('\\', '/', dirname(dirname(dirname(dirname(__DIR__))))), '/');
 }
 $_sub = str_replace($_docRoot, '', $_appAbs);
+if (!empty($_SERVER['HTTP_HOST']) && str_contains($_SERVER['HTTP_HOST'], 'railway.app')) {
+    $_prot = 'https';
+}
 define('APP_URL',     $_prot . '://' . $_host . $_sub);
 define('APP_ROOT',    $_appAbs);
 define('UPLOAD_PATH', $_appAbs . '/uploads/produk/');
