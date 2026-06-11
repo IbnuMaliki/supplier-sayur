@@ -27,6 +27,9 @@ $pageT       = isset($pageTitle) ? sanitize($pageTitle) . ' — ' . APP_NAME : A
       <div class="navbar-brand-sub">Sayuran Segar Berkualitas</div>
     </div>
   </a>
+  <button class="navbar-toggle" id="navbar-toggle" onclick="toggleNavbar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
   <div class="navbar-nav">
     <a class="nav-link <?= $currentPage==='index'?'active':'' ?>" href="<?= APP_URL ?>">Home</a>
     <a class="nav-link <?= $currentPage==='produk'?'active':'' ?>" href="<?= APP_URL ?>/produk.php">Produk</a>
@@ -93,3 +96,20 @@ $pageT       = isset($pageTitle) ? sanitize($pageTitle) . ' — ' . APP_NAME : A
   <?= $flash['type'] === 'success' ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' ?> <?= sanitize($flash['msg']) ?>
 </div>
 <?php endif; ?>
+
+<script>
+function toggleNavbar() {
+  const nav = document.querySelector('.navbar-nav');
+  const btn = document.getElementById('navbar-toggle');
+  nav.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const nav = document.querySelector('.navbar-nav');
+  const btn = document.getElementById('navbar-toggle');
+  if (!nav.contains(e.target) && !btn.contains(e.target)) {
+    nav.classList.remove('open');
+    btn.classList.remove('open');
+  }
+});
+</script>
