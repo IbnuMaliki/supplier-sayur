@@ -1234,3 +1234,38 @@ button { font-family: var(--font-body); }
   .products-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: 1.9rem; }
 }
+
+/* ============================================================
+   FIX RESPONSIVE - SECTION CUSTOMER (index.php)
+   ============================================================ */
+
+/* Siapa Kami — stack vertikal di mobile */
+@media (max-width: 768px) {
+  #tentang > div {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+  #tentang h2 {
+    font-size: 1.6rem !important;
+  }
+}
+
+/* Keunggulan — 2 kolom di mobile, bukan 3 */
+@media (max-width: 768px) {
+  #tentang ~ section .section-gray > div > div[style*="repeat(3"],
+  section.section-gray div[style*="repeat(3"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* Kontak — stack vertikal di mobile */
+@media (max-width: 768px) {
+  #kontak div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  #kontak iframe {
+    min-height: 220px !important;
+    height: 220px !important;
+  }
+}
