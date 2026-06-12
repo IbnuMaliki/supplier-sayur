@@ -33,13 +33,43 @@ body { padding-top: 70px; }
 .admin-top-brand-sub { font-size:11px; color:var(--slate-500); }
 .admin-top-actions { display: flex; align-items: center; gap: 12px; }
 .admin-top-user { display: flex; align-items: center; gap: 10px; color: var(--slate-300); font-size: 14px; }
+
+/* Hamburger — hanya muncul di mobile */
+.admin-hamburger {
+  display: none; flex-direction: column; gap: 5px;
+  cursor: pointer; padding: 8px; border: none;
+  background: none; border-radius: 6px; margin-right: 8px;
+}
+.admin-hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: rgba(255,255,255,0.7); border-radius: 2px; transition: all 0.25s;
+}
+.admin-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.admin-hamburger.open span:nth-child(2) { opacity: 0; }
+.admin-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Overlay gelap */
+.admin-sidebar-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 899;
+}
+.admin-sidebar-overlay.show { display: block; }
+
+@media (max-width: 768px) {
+  .admin-hamburger { display: flex; }
+  .admin-sidebar { top: 70px !important; height: calc(100vh - 70px) !important; }
+}
 </style>
 </head>
 <body>
 
 <nav class="admin-top-navbar">
-  <div class="admin-top-brand">
-    <img src="<?= APP_URL ?>/assets/img/logo.png" alt="Logo">
+  <div style="display:flex;align-items:center;">
+    <button class="admin-hamburger" id="adminHamburger" aria-label="Toggle Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="admin-top-brand">
+      <img src="<?= APP_URL ?>/assets/img/logo.png" alt="Logo">
     <div>
       <div class="admin-top-brand-text"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> Admin Panel</div>
       <div class="admin-top-brand-sub"><?= APP_NAME ?></div>
@@ -56,6 +86,25 @@ body { padding-top: 70px; }
     <a href="<?= APP_URL ?>/logout.php" style="background:var(--red-500);color:white;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Keluar</a>
   </div>
 </nav>
+
+<div class="admin-sidebar-overlay" id="adminOverlay"></div>
+
+<script>
+(function(){
+  var btn     = document.getElementById('adminHamburger');
+  var overlay = document.getElementById('adminOverlay');
+  var sidebar;
+  function getSidebar(){ return sidebar || (sidebar = document.querySelector('.admin-sidebar')); }
+  function toggle(){
+    var s = getSidebar();
+    var open = s.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    overlay.classList.toggle('show', open);
+  }
+  btn.addEventListener('click', toggle);
+  overlay.addEventListener('click', toggle);
+})();
+</script>
 
 <?php if ($flash): ?>
 <div class="flash-message flash-<?= sanitize($flash['type']) ?>" id="flash-msg" style="top:80px;">
