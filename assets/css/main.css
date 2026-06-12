@@ -1278,3 +1278,10 @@ button { font-family: var(--font-body); }
     padding: 24px 20px !important;
   }
 }
+
+/* Fix keranjang - stack vertikal di mobile */
+@media (max-width: 768px) {
+  div[style*="grid-template-columns:1fr 340px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
