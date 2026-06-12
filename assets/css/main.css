@@ -1324,3 +1324,21 @@ button { font-family: var(--font-body); }
     content: '';
   }
 }
+
+/* Fix foto profil di mobile menu - jangan stretching */
+@media (max-width: 768px) {
+  .navbar-nav .user-avatar-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+  }
+  .navbar-nav .user-avatar-btn img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+  }
+}
