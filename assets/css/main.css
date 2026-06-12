@@ -1269,3 +1269,12 @@ button { font-family: var(--font-body); }
     height: 220px !important;
   }
 }
+
+/* Fix rating summary panel - stack vertikal di mobile */
+@media (max-width: 600px) {
+  div[style*="grid-template-columns:200px 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    padding: 24px 20px !important;
+  }
+}
