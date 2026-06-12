@@ -1285,3 +1285,42 @@ button { font-family: var(--font-body); }
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Fix cart table di mobile */
+@media (max-width: 768px) {
+  /* Sembunyikan kolom gambar terpisah */
+  .cart-table thead tr th:first-child,
+  .cart-table tbody tr td:first-child {
+    display: none;
+  }
+
+  /* Kolom nama: tampilkan gambar inline di kiri */
+  .cart-table tbody tr td:nth-child(2) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Ambil gambar dari td pertama, tampilkan via sibling trick — 
+     karena td pertama disembunyikan, kita pakai pseudo approach.
+     Lebih simpel: kecilkan padding & biarkan scroll horizontal */
+  .cart-table {
+    font-size: 13px;
+  }
+  .cart-table th, .cart-table td {
+    padding: 10px 8px;
+  }
+  .cart-product-img {
+    width: 44px !important;
+    height: 44px !important;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  /* Pindahkan gambar supaya ikut kolom nama */
+  .cart-table tbody tr td:first-child {
+    display: none;
+  }
+  .cart-table tbody tr td:nth-child(2)::before {
+    content: '';
+  }
+}
