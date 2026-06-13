@@ -173,14 +173,19 @@ include __DIR__ . '/includes/admin_header.php';
       </td>
       <td style="font-size:12px; color:var(--slate-400);"><?= date('H:i', strtotime($p['created_at'])) ?></td>
       <td>
-       <button class="btn-action btn-edit" onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='flex'" style="margin-right:4px;">Update</button>
-        <a href="struk.php?id=<?= $p['id'] ?>" target="_blank" class="btn-action" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;margin-right:4px;">Struk</a>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:80px;">
+        <button class="btn-action btn-edit" onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='flex'" style="width:100%;text-align:center;">Update</button>
+        <?php if ($p['status'] !== 'dibatalkan'): ?>
+        <a href="struk.php?id=<?= $p['id'] ?>" target="_blank" class="btn-action" style="width:100%;text-align:center;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">🖨️ Struk</a>
+        <?php endif; ?>
         <a href="?action=delete&id=<?= $p['id'] ?>"
-           class="btn-action btn-del"
-           onclick="return confirm('Hapus pesanan <?= addslashes(sanitize($p['kode_pesanan'])) ?>?\n\nData pesanan akan dihapus permanen.')">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          Hapus
-        </a>
+     class="btn-action btn-del"
+     style="width:100%;text-align:center;"
+     onclick="return confirm('Hapus pesanan <?= addslashes(sanitize($p['kode_pesanan'])) ?>?\\n\\nData pesanan akan dihapus permanen.')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    Hapus
+  </a>
+</div>
       </td>
     </tr>
     <!-- Modal Update Status -->
