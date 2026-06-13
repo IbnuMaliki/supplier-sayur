@@ -1385,3 +1385,76 @@ button { font-family: var(--font-body); }
   }
   .chat-empty-desktop { display: flex !important; }
 }
+
+/* ============================================================
+   FIX RESPONSIVE ADMIN PANEL
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+  /* ── Navbar: fix teks numpuk ── */
+  .admin-top-brand-text,
+  .admin-top-brand-sub { display: none; }
+
+  /* ── Semua tabel admin: bisa scroll horizontal ── */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table, .admin-table { min-width: 600px; }
+
+  /* ── Dashboard: Chart + Stok Hampir Habis stack ── */
+  div[style*="grid-template-columns:2fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Laporan: summary cards 2 kolom ── */
+  div[style*="repeat(4,1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ── Laporan: Produk Terlaris + Breakdown Status stack ── */
+  div[style*="grid-template-columns:2fr 1fr"],
+  div[style*="grid-template-columns: 2fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Riwayat Stok: summary cards stack ── */
+  div[style*="repeat(3,1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* ── Tentang Kami & Foto Hero: form + preview stack ── */
+  div[style*="grid-template-columns:2fr 1fr"],
+  div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Customers: tabel scroll ── */
+  .table-wrap table { min-width: 500px; }
+
+  /* ── Chat Admin Mobile ── */
+  .chat-sidebar-mobile-full {
+    display: block !important;
+    width: 100% !important;
+  }
+  .chat-empty-desktop { display: none !important; }
+  .chat-layout .chat-sidebar:not(.chat-sidebar-mobile-full) {
+    display: none !important;
+  }
+  .chat-layout .chat-main { width: 100% !important; }
+  .chat-back-btn {
+    display: flex !important;
+    align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--slate-100);
+    color: var(--slate-700);
+    text-decoration: none;
+    flex-shrink: 0; margin-right: 4px;
+  }
+}
+
+@media (min-width: 769px) {
+  .chat-back-btn { display: none !important; }
+  .chat-sidebar-mobile-full { width: 260px !important; }
+  .chat-empty-desktop { display: flex !important; }
+}
