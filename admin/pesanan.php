@@ -173,7 +173,8 @@ include __DIR__ . '/includes/admin_header.php';
       </td>
       <td style="font-size:12px; color:var(--slate-400);"><?= date('H:i', strtotime($p['created_at'])) ?></td>
       <td>
-        <button class="btn-action btn-edit" onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='flex'" style="margin-right:4px;">Update</button>
+       <button class="btn-action btn-edit" onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='flex'" style="margin-right:4px;">Update</button>
+        <a href="struk.php?id=<?= $p['id'] ?>" target="_blank" class="btn-action" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;margin-right:4px;">Struk</a>
         <a href="?action=delete&id=<?= $p['id'] ?>"
            class="btn-action btn-del"
            onclick="return confirm('Hapus pesanan <?= addslashes(sanitize($p['kode_pesanan'])) ?>?\n\nData pesanan akan dihapus permanen.')">
