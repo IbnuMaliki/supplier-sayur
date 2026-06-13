@@ -255,7 +255,7 @@ $statusLabel = [
   <!-- Tombol Aksi -->
   <div class="print-actions">
     <a class="btn-back" href="pesanan.php">← Kembali</a>
-    <button class="btn-print" onclick="window.print()">🖨️ Cetak Struk</button>
+    <button class="btn-print" onclick="window.print()">Cetak Struk</button>
   </div>
 </div>
 
