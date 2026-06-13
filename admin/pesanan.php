@@ -104,7 +104,7 @@ include __DIR__ . '/includes/admin_header.php';
 </div>
 <table class="data-table">
   <thead>
-    <tr><th>ID Pesanan</th><th>Customer</th><th>Info Pengiriman</th><th>Total</th><th>VA</th><th>Status</th><th>Tanggal</th><th>Update Status</th></tr>
+    <tr><th>ID Pesanan</th><th>Customer</th><th>Info Pengiriman</th><th>Total</th><th>VA</th><th>Status</th><th>Waktu</th><th>Update Status</th></tr>
   </thead>
   <tbody>
     <?php if (count($pesananList) === 0): ?>
@@ -176,7 +176,7 @@ include __DIR__ . '/includes/admin_header.php';
       <div style="display:flex;flex-direction:column;gap:6px;min-width:80px;">
         <button class="btn-action btn-edit" onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='flex'" style="width:100%;text-align:center;">Update</button>
         <?php if ($p['status'] !== 'dibatalkan'): ?>
-        <a href="struk.php?id=<?= $p['id'] ?>" target="_blank" class="btn-action" style="width:100%;text-align:center;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">🖨️ Struk</a>
+        <a href="struk.php?id=<?= $p['id'] ?>" target="_blank" class="btn-action" style="width:100%;text-align:center;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">Struk</a>
         <?php endif; ?>
         <a href="?action=delete&id=<?= $p['id'] ?>"
      class="btn-action btn-del"
