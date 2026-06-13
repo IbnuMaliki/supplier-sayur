@@ -37,10 +37,13 @@ if ($selectedUserId) {
 include __DIR__ . '/includes/admin_header.php';
 ?>
 <div class="admin-page-title"> Pesan Masuk</div>
+
+<?php if ($selectedUserId && count($messages) > 0): ?>
+<!-- MODE CHAT — mobile: full screen chat + tombol back -->
 <div class="chat-layout" style="height:calc(100vh - 150px); border:1px solid var(--slate-200); border-radius:var(--radius-lg); overflow:hidden;">
-  <!-- Sidebar users -->
-  <div class="chat-sidebar" style="border-right:1px solid var(--slate-100);">
-    <div class="chat-sidebar-header" style="font-size:13px;">Semua Percakapan (<?= count($chatUsers) ?>)</div>
+  <!-- Sidebar users — tersembunyi di mobile saat chat aktif -->
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">Semua Percakapan (<?= count($chatUsers) ?>)</div>
     <?php foreach ($chatUsers as $u): ?>
     <a href="chat_admin.php?user_id=<?= $u['user_id'] ?>" class="chat-contact <?= $selectedUserId===$u['user_id']?'active':'' ?>" style="text-decoration:none;">
       <div class="contact-avatar"><?= strtoupper(substr($u['nama'],0,1)) ?></div>
@@ -51,19 +54,13 @@ include __DIR__ . '/includes/admin_header.php';
           <div style="background:var(--green-500);color:white;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;"><?= $u['unread'] ?></div>
           <?php endif; ?>
         </div>
-        <div class="contact-last" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-          <?= sanitize(substr($u['last_msg']??'',0,40)) ?>
-        </div>
+        <div class="contact-last"><?= sanitize(substr($u['last_msg']??'',0,40)) ?></div>
       </div>
     </a>
     <?php endforeach; ?>
-    <?php if (count($chatUsers) === 0): ?>
-    <div style="padding:30px;text-align:center;color:var(--slate-400);font-size:13px;">Belum ada pesan masuk</div>
-    <?php endif; ?>
   </div>
 
   <!-- Chat area -->
-  <?php if ($selectedUserId && count($messages) > 0): ?>
   <div class="chat-main">
     <?php
     $userInfo = $pdo->prepare("SELECT * FROM users WHERE id=?");
@@ -71,6 +68,10 @@ include __DIR__ . '/includes/admin_header.php';
     $chatUser = $userInfo->fetch();
     ?>
     <div class="chat-header">
+      <!-- Tombol back — hanya muncul di mobile -->
+      <a href="chat_admin.php" class="chat-back-btn" title="Kembali">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
       <div class="contact-avatar"><?= strtoupper(substr($chatUser['nama'],0,1)) ?></div>
       <div>
         <div style="font-size:15px;font-weight:700;color:var(--slate-800);"><?= sanitize($chatUser['nama']) ?></div>
@@ -97,15 +98,40 @@ include __DIR__ . '/includes/admin_header.php';
       </div>
     </form>
   </div>
-  <?php else: ?>
-  <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--slate-400);">
+</div>
+
+<?php else: ?>
+<!-- MODE LIST — mobile: tampilkan daftar customer -->
+<div class="chat-layout" style="height:calc(100vh - 150px); border:1px solid var(--slate-200); border-radius:var(--radius-lg); overflow:hidden;">
+  <div class="chat-sidebar chat-sidebar-mobile-full">
+    <div class="chat-sidebar-header">Semua Percakapan (<?= count($chatUsers) ?>)</div>
+    <?php foreach ($chatUsers as $u): ?>
+    <a href="chat_admin.php?user_id=<?= $u['user_id'] ?>" class="chat-contact" style="text-decoration:none;">
+      <div class="contact-avatar"><?= strtoupper(substr($u['nama'],0,1)) ?></div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="contact-name"><?= sanitize($u['nama']) ?></div>
+          <?php if ($u['unread'] > 0): ?>
+          <div style="background:var(--green-500);color:white;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;"><?= $u['unread'] ?></div>
+          <?php endif; ?>
+        </div>
+        <div class="contact-last"><?= sanitize(substr($u['last_msg']??'',0,40)) ?></div>
+      </div>
+    </a>
+    <?php endforeach; ?>
+    <?php if (count($chatUsers) === 0): ?>
+    <div style="padding:30px;text-align:center;color:var(--slate-400);font-size:13px;">Belum ada pesan masuk</div>
+    <?php endif; ?>
+  </div>
+  <!-- Panel kanan — hanya di desktop -->
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--slate-400);" class="chat-empty-desktop">
     <div class="empty-state">
-      <div class="empty-icon"></div>
       <div class="empty-title">Pilih percakapan</div>
       <div class="empty-sub">Klik nama customer untuk membuka pesan</div>
     </div>
   </div>
-  <?php endif; ?>
+</div>
+<?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/includes/admin_footer.php'; ?>
