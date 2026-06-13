@@ -230,13 +230,6 @@ $statusLabel = [
       <span class="info-label">Metode Bayar</span>
       <span class="info-val"><?= sanitize($p['metode_bayar'] ?? '-') ?></span>
     </div>
-    <?php if (!empty($p['nomor_va'])): ?>
-    <div class="va-box">
-      <div class="va-label">Nomor Virtual Account</div>
-      <div class="va-number"><?= sanitize($p['nomor_va']) ?></div>
-      <div class="va-bank"><?= sanitize($p['metode_bayar'] ?? '') ?></div>
-    </div>
-    <?php endif; ?>
 
     <hr class="divider-solid">
 
