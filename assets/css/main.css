@@ -1342,3 +1342,46 @@ button { font-family: var(--font-body); }
     border-radius: 50% !important;
   }
 }
+
+/* ── Chat Admin Mobile ── */
+@media (max-width: 768px) {
+  /* Sidebar jadi full width di mobile saat mode list */
+  .chat-sidebar-mobile-full {
+    display: block !important;
+    width: 100% !important;
+  }
+  /* Panel "Pilih percakapan" sembunyikan di mobile */
+  .chat-empty-desktop {
+    display: none !important;
+  }
+  /* Saat chat aktif — sembunyikan sidebar, tampilkan chat full */
+  .chat-layout .chat-sidebar:not(.chat-sidebar-mobile-full) {
+    display: none !important;
+  }
+  .chat-layout .chat-main {
+    width: 100% !important;
+  }
+  /* Tombol back — hanya muncul di mobile */
+  .chat-back-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--slate-100);
+    color: var(--slate-700);
+    text-decoration: none;
+    flex-shrink: 0;
+    margin-right: 4px;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Desktop — sembunyikan tombol back */
+  .chat-back-btn { display: none !important; }
+  /* Desktop — sidebar normal */
+  .chat-sidebar-mobile-full {
+    width: 260px !important;
+  }
+  .chat-empty-desktop { display: flex !important; }
+}
