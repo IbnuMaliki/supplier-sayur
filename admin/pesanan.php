@@ -193,8 +193,10 @@ include __DIR__ . '/includes/admin_header.php';
       <div style="background:white;border-radius:var(--radius-xl);width:100%;max-width:480px;box-shadow:var(--shadow-lg);overflow:hidden;">
         <div style="padding:20px 24px;border-bottom:1px solid var(--slate-100);display:flex;justify-content:space-between;align-items:center;">
           <div style="font-family:var(--font-display);font-size:18px;font-weight:700;">Update Pesanan #<?= sanitize($p['kode_pesanan']) ?></div>
-          <button onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--slate-400);"></button>
-        </div>
+          <button onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--slate-400);padding:4px;display:flex;align-items:center;justify-content:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+</div>
         <div style="padding:24px;">
           <!-- Detail produk -->
           <?php
@@ -248,6 +250,7 @@ include __DIR__ . '/includes/admin_header.php';
               </div>
             </div>
             <button type="submit" class="btn btn-secondary btn-full">Simpan Status</button>
+            <button type="button" onclick="document.getElementById('modal-<?= $p['id'] ?>').style.display='none'" class="btn btn-outline-green btn-full" style="margin-top:8px;">Batal</button>
           </form>
         </div>
       </div>
