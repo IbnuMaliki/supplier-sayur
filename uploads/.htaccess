@@ -1,0 +1,5 @@
+# Larang akses PHP di folder uploads (keamanan)
+<FilesMatch "\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

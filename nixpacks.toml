@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo", "php83Extensions.pdo_mysql", "php83Extensions.mysqli", "php83Extensions.mbstring", "php83Extensions.gd", "php83Extensions.curl", "php83Extensions.fileinfo"]
+
+[start]
+cmd = "php -d extension=pdo_mysql -d extension=mysqli -S 0.0.0.0:${PORT:-8080} -t /app"
