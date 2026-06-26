@@ -17,15 +17,28 @@ define('DB_CHARSET', 'utf8mb4');
 try {
     $pdo = new PDO(
         "mysql:host=".DB_HOST.";port=".DB_PORT.";dbname=".DB_NAME.";charset=".DB_CHARSET,
-        DB_USER,
-        DB_PASS
+        DB_USER, DB_PASS,
+        [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]
     );
-    
-    echo "Koneksi berhasil";
-    exit;
-
 } catch (PDOException $e) {
-    die($e->getMessage());
+    die('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Error DB</title>
+    <style>body{font-family:sans-serif;padding:40px;background:#fef2f2}
+    .box{background:white;border-left:5px solid #ef4444;padding:24px;border-radius:8px;max-width:600px;margin:0 auto}
+    h2{color:#991b1b}p{color:#555}code{background:#f3f4f6;padding:2px 6px;border-radius:4px}</style></head>
+    <body><div class="box">
+    <h2>&#10060; Koneksi Database Gagal</h2>
+    <p><strong>Error:</strong> ' . htmlspecialchars($e->getMessage()) . '</p>
+    <p>Pastikan:</p>
+    <ul>
+      <li>MySQL sudah <strong>Start</strong> di XAMPP Control Panel</li>
+      <li>Database <code>supplier_sayur</code> sudah diimport via phpMyAdmin</li>
+      <li>Username/password di <code>includes/config.php</code> sudah benar</li>
+    </ul>
+    </div></body></html>');
 }
 
 // AUTO-DETECT APP_URL
