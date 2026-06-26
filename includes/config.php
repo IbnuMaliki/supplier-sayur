@@ -3,14 +3,21 @@
 // KONFIGURASI APLIKASI — Supplier Sayur Azam Heri
 // ============================================================
 
+// SESSION — harus paling awal sebelum output apapun
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.save_path', '/tmp/sessions');
+    @mkdir('/tmp/sessions', 0777, true);
+    session_start();
+}
+
 define('APP_NAME', 'Supplier Sayur Azam Heri');
 
 // DATABASE — baca dari environment variable Railway, fallback ke XAMPP lokal
-define('DB_HOST',    getenv('MYSQLHOST')    ?: 'localhost');
-define('DB_USER',    getenv('MYSQLUSER')    ?: 'root');
+define('DB_HOST',    getenv('MYSQLHOST')     ?: 'localhost');
+define('DB_USER',    getenv('MYSQLUSER')     ?: 'root');
 define('DB_PASS',    getenv('MYSQLPASSWORD') ?: '');
 define('DB_NAME',    getenv('MYSQLDATABASE') ?: 'supplier_sayur');
-define('DB_PORT',    getenv('MYSQLPORT')    ?: '3306');
+define('DB_PORT',    getenv('MYSQLPORT')     ?: '3306');
 define('DB_CHARSET', 'utf8mb4');
 
 // Koneksi PDO
@@ -42,8 +49,14 @@ try {
 }
 
 // AUTO-DETECT APP_URL
-$_prot = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
-         (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$_prot = 'http';
+if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+    $_prot = 'https';
+} elseif (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+    $_prot = 'https';
+} elseif (!empty($_SERVER['HTTP_HOST']) && str_contains($_SERVER['HTTP_HOST'], 'railway.app')) {
+    $_prot = 'https';
+}
 $_host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $_appAbs  = rtrim(str_replace('\\', '/', realpath(dirname(__DIR__))), '/');
 $_docRoot = rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
@@ -51,19 +64,11 @@ if (empty($_docRoot)) {
     $_docRoot = rtrim(str_replace('\\', '/', dirname(dirname(dirname(dirname(__DIR__))))), '/');
 }
 $_sub = str_replace($_docRoot, '', $_appAbs);
-if (!empty($_SERVER['HTTP_HOST']) && str_contains($_SERVER['HTTP_HOST'], 'railway.app')) {
-    $_prot = 'https';
-}
 define('APP_URL',     $_prot . '://' . $_host . $_sub);
 define('APP_ROOT',    $_appAbs);
 define('UPLOAD_PATH', $_appAbs . '/uploads/produk/');
 define('UPLOAD_URL',  APP_URL . '/uploads/produk/');
 unset($_prot, $_host, $_appAbs, $_docRoot, $_sub);
-
-// SESSION
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 // HELPER FUNCTIONS
 function formatRupiah($angka) {

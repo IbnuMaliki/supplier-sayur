@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['nama_warung']= $user['nama_warung'];
             $_SESSION['role']       = $user['role'];
             flashMessage('success', 'Selamat datang kembali, ' . $user['nama'] . '! ');
-            redirect($user['role'] === 'admin' ? APP_URL . '/admin/' : APP_URL);
+            redirect($user['role'] === 'admin' ? APP_URL . '/admin/index.php' : APP_URL . '/index.php');
         } else {
             $error = 'Email atau password salah.';
         }
