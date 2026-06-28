@@ -122,19 +122,23 @@ if ($filterAktif !== 'semua' && isset($filterMap[$filterAktif])) {
 $pesananList = array_values($pesananList);
 
 // Status steps
-$statusSteps = ['menunggu_bayar','diproses','dikirim','selesai'];
+$statusSteps = ['menunggu_bayar','menunggu_pembayaran','diproses','dikirim','selesai'];
 $statusLabel = [
-    'menunggu_bayar' => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Bayar',
-    'diproses'       => ' Diproses',
-    'dikirim'        => ' Dikirim',
-    'selesai'        => ' Selesai',
-    'dibatalkan'     => ' Dibatalkan',
+    'menunggu_bayar'      => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Bayar',
+    'menunggu_pembayaran' => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Pembayaran',
+    'dibayar'             => ' Dibayar',
+    'diproses'            => ' Diproses',
+    'dikirim'             => ' Dikirim',
+    'selesai'             => ' Selesai',
+    'dibatalkan'          => ' Dibatalkan',
 ];
 $timelineLabel = [
-    'menunggu_bayar' => 'Menunggu Bayar',
-    'diproses'       => 'Diproses',
-    'dikirim'        => 'Dikirim',
-    'selesai'        => 'Selesai',
+    'menunggu_bayar'      => 'Menunggu Bayar',
+    'menunggu_pembayaran' => 'Menunggu Pembayaran',
+    'dibayar'             => 'Dibayar',
+    'diproses'            => 'Diproses',
+    'dikirim'             => 'Dikirim',
+    'selesai'             => 'Selesai',
 ];
 $timelineIcon = ['','','',''];
 
@@ -626,18 +630,22 @@ document.head.appendChild(toastStyle);
     const APP_URL = '<?= APP_URL ?>';
 
     const statusLabel = {
-        menunggu_bayar : 'Menunggu Bayar',
-        diproses       : 'Diproses',
-        dikirim        : 'Dikirim',
-        selesai        : 'Selesai',
-        dibatalkan     : 'Dibatalkan',
+    menunggu_bayar      : 'Menunggu Bayar',
+    menunggu_pembayaran : 'Menunggu Pembayaran',
+    dibayar             : 'Dibayar',
+    diproses            : 'Diproses',
+    dikirim             : 'Dikirim',
+    selesai             : 'Selesai',
+    dibatalkan          : 'Dibatalkan',
     };
     const statusClass = {
-        menunggu_bayar : 'status-menunggu_bayar',
-        diproses       : 'status-diproses',
-        dikirim        : 'status-dikirim',
-        selesai        : 'status-selesai',
-        dibatalkan     : 'status-dibatalkan',
+    menunggu_bayar      : 'status-menunggu_bayar',
+    menunggu_pembayaran : 'status-menunggu_bayar',
+    dibayar             : 'status-diproses',
+    diproses            : 'status-diproses',
+    dikirim             : 'status-dikirim',
+    selesai             : 'status-selesai',
+    dibatalkan          : 'status-dibatalkan',
     };
     const pesanToast = {
         diproses   : 'Pesanan Anda sedang diproses oleh supplier!',
