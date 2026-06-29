@@ -122,7 +122,7 @@ if ($filterAktif !== 'semua' && isset($filterMap[$filterAktif])) {
 $pesananList = array_values($pesananList);
 
 // Status steps
-$statusSteps = ['menunggu_bayar','menunggu_pembayaran','diproses','dikirim','selesai'];
+$statusSteps = ['menunggu_pembayaran','dibayar','diproses','dikirim','selesai'];
 $statusLabel = [
     'menunggu_bayar'      => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Bayar',
     'menunggu_pembayaran' => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Pembayaran',
@@ -133,7 +133,6 @@ $statusLabel = [
     'dibatalkan'          => ' Dibatalkan',
 ];
 $timelineLabel = [
-    'menunggu_bayar'      => 'Menunggu Bayar',
     'menunggu_pembayaran' => 'Menunggu Pembayaran',
     'dibayar'             => 'Dibayar',
     'diproses'            => 'Diproses',
