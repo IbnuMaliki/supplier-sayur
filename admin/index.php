@@ -8,21 +8,54 @@ $totalPendapatan = $pdo->query("SELECT COALESCE(SUM(total_harga),0) FROM pesanan
 $totalPesanan    = $pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn();
 $totalCustomer   = $pdo->query("SELECT COUNT(*) FROM users WHERE role='customer'")->fetchColumn();
 $avgRating       = $pdo->query("SELECT ROUND(AVG(bintang),1) FROM rating")->fetchColumn();
-
-// Pesananbulan ini
 $pesananBulanIni = $pdo->query("SELECT COUNT(*) FROM pesanan WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())")->fetchColumn();
 
-// Grafik 7 hari (pendapatan)
-$chartData = [];
-for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i days"));
-    $label = date('D', strtotime($date));
-    $stmt = $pdo->prepare("SELECT COALESCE(SUM(total_harga),0) FROM pesanan WHERE DATE(created_at)=? AND status IN ('selesai','dikirim','diproses')");
-    $stmt->execute([$date]);
-    $val = (float)$stmt->fetchColumn();
-    $chartData[] = ['label' => $label, 'value' => $val];
+// Filter periode
+$periode = $_GET['periode'] ?? 'mingguan';
+
+if ($periode === 'bulanan') {
+    // 6 bulan terakhir
+    $chartData = [];
+    for ($i = 5; $i >= 0; $i--) {
+        $year  = date('Y', strtotime("-$i months"));
+        $month = date('m', strtotime("-$i months"));
+        $label = date('M', strtotime("-$i months"));
+        $stmt  = $pdo->prepare("SELECT COALESCE(SUM(total_harga),0) FROM pesanan WHERE YEAR(created_at)=? AND MONTH(created_at)=? AND status IN ('selesai','dikirim','diproses')");
+        $stmt->execute([$year, $month]);
+        $chartData[] = ['label' => $label, 'value' => (float)$stmt->fetchColumn()];
+    }
+    // Jumlah pesanan per bulan
+    $chartPesanan = [];
+    for ($i = 5; $i >= 0; $i--) {
+        $year  = date('Y', strtotime("-$i months"));
+        $month = date('m', strtotime("-$i months"));
+        $stmt  = $pdo->prepare("SELECT COUNT(*) FROM pesanan WHERE YEAR(created_at)=? AND MONTH(created_at)=?");
+        $stmt->execute([$year, $month]);
+        $chartPesanan[] = (int)$stmt->fetchColumn();
+    }
+} else {
+    // 7 hari terakhir (default mingguan)
+    $chartData = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date  = date('Y-m-d', strtotime("-$i days"));
+        $label = date('D', strtotime($date));
+        $stmt  = $pdo->prepare("SELECT COALESCE(SUM(total_harga),0) FROM pesanan WHERE DATE(created_at)=? AND status IN ('selesai','dikirim','diproses')");
+        $stmt->execute([$date]);
+        $chartData[] = ['label' => $label, 'value' => (float)$stmt->fetchColumn()];
+    }
+    // Jumlah pesanan per hari
+    $chartPesanan = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-$i days"));
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM pesanan WHERE DATE(created_at)=?");
+        $stmt->execute([$date]);
+        $chartPesanan[] = (int)$stmt->fetchColumn();
+    }
 }
-$maxVal = max(array_column($chartData, 'value')) ?: 1;
+
+$chartLabels = json_encode(array_column($chartData, 'label'));
+$chartValues = json_encode(array_column($chartData, 'value'));
+$chartPesananJson = json_encode($chartPesanan);
 
 // Pesanan terbaru
 $pesananTerbaru = $pdo->query("
@@ -35,8 +68,13 @@ $pesananTerbaru = $pdo->query("
 $stokHabis = $pdo->query("SELECT * FROM produk WHERE stok <= 20 AND status='aktif' ORDER BY stok ASC LIMIT 5")->fetchAll();
 
 $statusLabel = [
-    'menunggu_bayar'=>'<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu','diproses'=>' Diproses',
-    'dikirim'=>' Dikirim','selesai'=>' Selesai','dibatalkan'=>' Dibatalkan'
+    'menunggu_bayar'      => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu',
+    'menunggu_pembayaran' => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Bayar',
+    'dibayar'             => ' Dibayar',
+    'diproses'            => ' Diproses',
+    'dikirim'             => ' Dikirim',
+    'selesai'             => ' Selesai',
+    'dibatalkan'          => ' Dibatalkan',
 ];
 
 include __DIR__ . '/includes/admin_header.php';
@@ -95,33 +133,56 @@ include __DIR__ . '/includes/admin_header.php';
 
 <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px; margin-bottom:24px; align-items:start;">
 <!-- Grafik -->
-<div class="chart-card">
-  <div class="chart-title">Pendapatan 7 Hari Terakhir</div>
-  <div class="bar-chart">
-    <?php foreach ($chartData as $d):
-        $pct = $maxVal > 0 ? ($d['value'] / $maxVal * 100) : 0;
-        $label = $d['value'] >= 1000000 ? 'Rp'.number_format($d['value']/1000000,1).'Jt' : ($d['value']>0?'Rp'.number_format($d['value']/1000,0).'K':'-');
-      ?>
-    <div class="bar-wrap">
-      <div class="bar-val"><?= $label ?></div>
-      <div class="bar" style="height:<?= max(4, $pct) ?>%;" title="<?= $d['label'] ?>: <?= formatRupiah($d['value']) ?>"></div>
-      <div class="bar-lbl"><?= $d['label'] ?></div>
+<!-- Filter Periode -->
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <span style="font-size:13px;font-weight:600;color:var(--slate-500);">Periode:</span>
+  <a href="?periode=mingguan" 
+     style="padding:7px 18px;border-radius:100px;font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;
+            background:<?= $periode==='mingguan'?'var(--green-600)':'var(--slate-100)' ?>;
+            color:<?= $periode==='mingguan'?'white':'var(--slate-600)' ?>;">
+    Mingguan
+  </a>
+  <a href="?periode=bulanan"
+     style="padding:7px 18px;border-radius:100px;font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;
+            background:<?= $periode==='bulanan'?'var(--green-600)':'var(--slate-100)' ?>;
+            color:<?= $periode==='bulanan'?'white':'var(--slate-600)' ?>;">
+    Bulanan
+  </a>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:24px;align-items:start;">
+<!-- Grafik -->
+<div class="chart-card" style="padding:20px;">
+  <div class="chart-title" style="margin-bottom:16px;">
+    Pendapatan <?= $periode==='bulanan'?'6 Bulan':'7 Hari' ?> Terakhir
+  </div>
+  <div style="position:relative;height:220px;">
+    <canvas id="chartPendapatan"></canvas>
+  </div>
+  <div style="margin-top:20px;border-top:1px solid var(--slate-100);padding-top:16px;">
+    <div class="chart-title" style="margin-bottom:12px;">
+      Jumlah Pesanan <?= $periode==='bulanan'?'6 Bulan':'7 Hari' ?> Terakhir
     </div>
-    <?php endforeach; ?>
+    <div style="position:relative;height:160px;">
+      <canvas id="chartPesanan"></canvas>
+    </div>
   </div>
 </div>
 
-<!--<span class="icon-warn" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Stok Hampir Habis -->
+<!-- Stok Hampir Habis -->
 <div class="chart-card" style="padding:20px;">
-  <div class="chart-title"><span class="icon-warn" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Stok Hampir Habis</div>
+  <div class="chart-title">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Stok Hampir Habis
+  </div>
   <?php if (count($stokHabis) === 0): ?>
-  <div style="text-align:center; padding:20px; color:var(--slate-400); font-size:13px;">Semua stok mencukupi </div>
+  <div style="text-align:center;padding:20px;color:var(--slate-400);font-size:13px;">Semua stok mencukupi ✅</div>
   <?php else: ?>
   <?php foreach ($stokHabis as $s): ?>
-  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--slate-50);">
-    <div style="font-size:13px; font-weight:600; color:var(--slate-700);"><?= sanitize($s['nama']) ?></div>
-    <div style="font-size:12px; font-weight:700; color:<?= $s['stok']==0?'var(--red-500)':'var(--amber-400)' ?>;">
-      <?= $s['stok'] == 0 ? 'Habis' : $s['stok'].' kg' ?>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--slate-50);">
+    <div style="font-size:13px;font-weight:600;color:var(--slate-700);"><?= sanitize($s['nama']) ?></div>
+    <div style="font-size:12px;font-weight:700;color:<?= $s['stok']==0?'#ef4444':'#f59e0b' ?>;">
+      <?= $s['stok']==0?'Habis':$s['stok'].' kg' ?>
     </div>
   </div>
   <?php endforeach; ?>
@@ -130,10 +191,13 @@ include __DIR__ . '/includes/admin_header.php';
 </div>
 </div>
 
-<!--<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span> Pesanan Terbaru -->
+<!-- Tabel Pesanan Terbaru -->
 <div class="table-wrap">
 <div class="table-header">
-  <div class="table-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span> Pesanan Terbaru</div>
+  <div class="table-title">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    Pesanan Terbaru
+  </div>
   <a href="pesanan.php" class="btn btn-sm btn-outline-green">Lihat Semua</a>
 </div>
 <table class="data-table">
@@ -149,15 +213,91 @@ include __DIR__ . '/includes/admin_header.php';
         <div style="font-size:12px;color:var(--slate-400);"><?= sanitize($p['nama_warung']??'-') ?></div>
       </td>
       <td style="font-weight:700;color:var(--green-700);"><?= formatRupiah($p['total_harga']) ?></td>
-      <td><span class="status-badge status-<?= $p['status'] ?>"><?= $statusLabel[$p['status']] ?></span></td>
+      <td><span class="status-badge status-<?= $p['status'] ?>"><?= $statusLabel[$p['status']] ?? $p['status'] ?></span></td>
       <td style="font-size:13px;color:var(--slate-400);"><?= date('d M Y H:i', strtotime($p['created_at'])) ?></td>
       <td>
-        <a href="pesanan.php?edit=<?= $p['id'] ?>" class="btn-action btn-edit">Update</a>
+        <a href="pesanan.php" class="btn-action btn-edit">Update</a>
       </td>
     </tr>
     <?php endforeach; ?>
   </tbody>
 </table>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@media (max-width:768px) {
+  div[style*="grid-template-columns:2fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+<script>
+const labels  = <?= $chartLabels ?>;
+const values  = <?= $chartValues ?>;
+const pesanan = <?= $chartPesananJson ?>;
+
+new Chart(document.getElementById('chartPendapatan'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Pendapatan (Rp)',
+      data: values,
+      backgroundColor: 'rgba(22,163,74,0.7)',
+      borderColor: '#16a34a',
+      borderWidth: 2,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => 'Rp ' + ctx.parsed.y.toLocaleString('id-ID') } }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => v>=1000000?'Rp'+v/1000000+'Jt':v>=1000?'Rp'+v/1000+'K':'Rp'+v, font:{size:11} },
+        grid: { color:'#f1f5f9' }
+      },
+      x: { grid:{display:false}, ticks:{font:{size:11}} }
+    }
+  }
+});
+
+new Chart(document.getElementById('chartPesanan'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Jumlah Pesanan',
+      data: pesanan,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59,130,246,0.1)',
+      borderWidth: 2,
+      pointBackgroundColor: '#3b82f6',
+      pointRadius: 4,
+      fill: true,
+      tension: 0.4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' pesanan' } }
+    },
+    scales: {
+      y: { beginAtZero:true, ticks:{stepSize:1,font:{size:11}}, grid:{color:'#f1f5f9'} },
+      x: { grid:{display:false}, ticks:{font:{size:11}} }
+    }
+  }
+});
+</script>
 
 <?php include __DIR__ . '/includes/admin_footer.php'; ?>
