@@ -122,7 +122,10 @@ if ($filterAktif !== 'semua' && isset($filterMap[$filterAktif])) {
 $pesananList = array_values($pesananList);
 
 // Status steps
-$statusSteps = ['menunggu_pembayaran','dibayar','diproses','dikirim','selesai'];
+$isCashOrder = str_contains($p['metode_bayar'] ?? '', 'COD') || str_contains($p['metode_bayar'] ?? '', 'Bayar di Tempat');
+$statusSteps = $isCashOrder
+    ? ['diproses','dikirim','selesai']
+    : ['menunggu_pembayaran','diproses','dikirim','selesai'];
 $statusLabel = [
     'menunggu_bayar'      => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Bayar',
     'menunggu_pembayaran' => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Pembayaran',
