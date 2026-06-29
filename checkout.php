@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kode = generateKodePesanan();
 
             $stmt = $pdo->prepare("INSERT INTO pesanan (kode_pesanan,user_id,nama_penerima,no_hp,alamat_pengiriman,catatan,total_harga,metode_bayar,status) VALUES (?,?,?,?,?,?,?,?,?)");
-            $statusAwal = $metodeTipe === 'cash' ? 'menunggu_bayar' : 'menunggu_pembayaran';
+          $statusAwal = $metodeTipe === 'cash' ? 'diproses' : 'menunggu_pembayaran';
             $stmt->execute([$kode, $userId, $nama, $hp, $alamat, $catatan, $total, $labelMetode, $statusAwal]);
             $pesananId = $pdo->lastInsertId();
 
