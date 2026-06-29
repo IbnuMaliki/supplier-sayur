@@ -253,6 +253,13 @@ include __DIR__ . '/includes/admin_header.php';
                 <?php endforeach; ?>
               </select>
             </div>
+              <div class="form-group">
+  <label class="form-label">Estimasi Pengiriman <span style="color:var(--slate-400);font-weight:400;">(opsional)</span></label>
+  <input type="date" class="form-input" name="estimasi_pengiriman"
+    value="<?= $p['estimasi_pengiriman'] ?? '' ?>"
+    min="<?= date('Y-m-d') ?>">
+  <div style="font-size:11px;color:var(--slate-400);margin-top:4px;">Tanggal estimasi barang tiba di customer</div>
+              </div>
             <div id="alasan-wrap-<?= $p['id'] ?>" style="display:<?= $p['status']==='dibatalkan'?'block':'none' ?>;">
               <div class="form-group">
                 <label class="form-label">Alasan Pembatalan</label>
