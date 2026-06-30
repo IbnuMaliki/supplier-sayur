@@ -26,11 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batalkan_pesanan'])) 
     $pesananId = (int)$_POST['pesanan_id'];
     $alasan    = trim($_POST['alasan_batal_customer'] ?? '');
 
-    // Hanya bisa batalkan jika status masih menunggu_bayar
     $cek = $pdo->prepare("SELECT id, status FROM pesanan WHERE id=? AND user_id=? AND status='menunggu_bayar'");
     $cek->execute([$pesananId, $userId]);
     if ($cek->fetch()) {
-        // Kembalikan stok
         $details = $pdo->prepare("SELECT produk_id, jumlah FROM detail_pesanan WHERE pesanan_id=?");
         $details->execute([$pesananId]);
         foreach ($details->fetchAll() as $d) {
@@ -45,26 +43,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batalkan_pesanan'])) 
     redirect(APP_URL . '/pesanan.php');
 }
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['beli_lagi'])) {
     $pesananId = (int)$_POST['pesanan_id'];
-    // Verifikasi pesanan milik user ini dan statusnya selesai
     $cek = $pdo->prepare("SELECT id FROM pesanan WHERE id=? AND user_id=? AND status='selesai'");
     $cek->execute([$pesananId, $userId]);
     if ($cek->fetch()) {
-        // Ambil detail pesanan
         $details = $pdo->prepare("SELECT produk_id, jumlah FROM detail_pesanan WHERE pesanan_id=?");
         $details->execute([$pesananId]);
         $items = $details->fetchAll();
         $added = 0;
         foreach ($items as $item) {
-            // Cek stok tersedia
             $stok = $pdo->prepare("SELECT stok FROM produk WHERE id=? AND status='aktif' AND stok>0");
             $stok->execute([$item['produk_id']]);
             $produk = $stok->fetch();
             if ($produk) {
                 $qty = min($item['jumlah'], $produk['stok']);
-                // Cek sudah ada di keranjang
                 $existing = $pdo->prepare("SELECT id, jumlah FROM keranjang WHERE user_id=? AND produk_id=?");
                 $existing->execute([$userId, $item['produk_id']]);
                 $row = $existing->fetch();
@@ -88,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['beli_lagi'])) {
 
 // Ambil pesanan
 $stmt = $pdo->prepare("
-
     SELECT p.*, 
            (SELECT COUNT(*) FROM rating r WHERE r.pesanan_id=p.id) as sudah_rating
     FROM pesanan p
@@ -111,7 +103,6 @@ $filterMap = [
 if ($filterAktif !== 'semua' && isset($filterMap[$filterAktif])) {
     $statusFilter = $filterMap[$filterAktif];
     if ($filterAktif === 'belum_bayar') {
-        // Belum bayar: menunggu_bayar ATAU COD (cash) yang statusnya menunggu bayar
         $pesananList = array_filter($pesananList, fn($p) =>
             $p['status'] === 'menunggu_bayar'
         );
@@ -121,11 +112,6 @@ if ($filterAktif !== 'semua' && isset($filterMap[$filterAktif])) {
 }
 $pesananList = array_values($pesananList);
 
-// Status steps
-$isCashOrder = str_contains($p['metode_bayar'] ?? '', 'COD') || str_contains($p['metode_bayar'] ?? '', 'Bayar di Tempat');
-$statusSteps = $isCashOrder
-    ? ['diproses','dikirim','selesai']
-    : ['menunggu_pembayaran','diproses','dikirim','selesai'];
 $statusLabel = [
     'menunggu_bayar'      => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Bayar',
     'menunggu_pembayaran' => '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Menunggu Pembayaran',
@@ -135,14 +121,6 @@ $statusLabel = [
     'selesai'             => ' Selesai',
     'dibatalkan'          => ' Dibatalkan',
 ];
-$timelineLabel = [
-    'menunggu_pembayaran' => 'Menunggu Pembayaran',
-    'dibayar'             => 'Dibayar',
-    'diproses'            => 'Diproses',
-    'dikirim'             => 'Dikirim',
-    'selesai'             => 'Selesai',
-];
-$timelineIcon = ['','','','',''];
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -192,11 +170,20 @@ $tabs = [
 <?php else: ?>
 
 <?php foreach ($pesananList as $p):
-    // Ambil detail
     $dStmt = $pdo->prepare("SELECT dp.*, p.gambar FROM detail_pesanan dp LEFT JOIN produk p ON dp.produk_id=p.id WHERE dp.pesanan_id=?");
     $dStmt->execute([$p['id']]);
     $details = $dStmt->fetchAll();
+
+    $isCashOrder = str_contains($p['metode_bayar'] ?? '', 'COD') || str_contains($p['metode_bayar'] ?? '', 'Bayar di Tempat');
+    $statusSteps = $isCashOrder
+        ? ['diproses','dikirim','selesai']
+        : ['menunggu_pembayaran','diproses','dikirim','selesai'];
+    $timelineLabel = $isCashOrder
+        ? ['diproses'=>'Diproses','dikirim'=>'Dikirim','selesai'=>'Selesai']
+        : ['menunggu_pembayaran'=>'Menunggu Pembayaran','diproses'=>'Diproses','dikirim'=>'Dikirim','selesai'=>'Selesai'];
+    $timelineIcon = $isCashOrder ? ['','',''] : ['','','',''];
     $currentIdx = array_search($p['status'], $statusSteps);
+
     $ratingData = null;
     if ($p['sudah_rating']) {
         $rStmt = $pdo->prepare("SELECT * FROM rating WHERE pesanan_id=?");
@@ -211,7 +198,7 @@ $tabs = [
       <div class="order-id"><?= sanitize($p['kode_pesanan']) ?></div>
       <div class="order-date"><?= date('d M Y H:i', strtotime($p['created_at'])) ?></div>
     </div>
-    <div class="status-badge status-<?= $p['status'] ?>" id="badge-<?= $p['id'] ?>"><?= $statusLabel[$p['status']] ?></div>
+    <div class="status-badge status-<?= $p['status'] ?>" id="badge-<?= $p['id'] ?>"><?= $statusLabel[$p['status']] ?? $p['status'] ?></div>
   </div>
 
   <!-- Detail Items -->
@@ -258,34 +245,36 @@ $tabs = [
 
   <!-- Timeline -->
   <?php if ($p['status'] !== 'dibatalkan'): ?>
+
   <?php if (!empty($p['estimasi_pengiriman']) && in_array($p['status'], ['diproses','dikirim'])): ?>
-<div style="padding:12px 20px;background:#eff6ff;border-top:1px solid #bfdbfe;display:flex;align-items:center;gap:10px;">
-  <div style="width:36px;height:36px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-  </div>
-  <div>
-    <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;">Estimasi Pengiriman</div>
-    <div style="font-size:15px;font-weight:800;color:#1e3a8a;">
-      <?php
-        $tgl = strtotime($p['estimasi_pengiriman']);
-        $hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-        $bln  = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-        echo $hari[date('w',$tgl)] . ', ' . date('j',$tgl) . ' ' . $bln[(int)date('n',$tgl)] . ' ' . date('Y',$tgl);
-      ?>
+  <div style="padding:12px 20px;background:#eff6ff;border-top:1px solid #bfdbfe;display:flex;align-items:center;gap:10px;">
+    <div style="width:36px;height:36px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     </div>
-    <?php
-      $selisih = (int)ceil(($tgl - time()) / 86400);
-      if ($selisih > 0): ?>
-    <div style="font-size:12px;color:#3b82f6;margin-top:2px;"><?= $selisih ?> hari lagi</div>
-    <?php elseif ($selisih === 0): ?>
-    <div style="font-size:12px;color:#16a34a;font-weight:700;margin-top:2px;">Hari ini!</div>
-    <?php else: ?>
-    <div style="font-size:12px;color:#dc2626;margin-top:2px;">Sudah lewat estimasi</div>
-    <?php endif; ?>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;">Estimasi Pengiriman</div>
+      <div style="font-size:15px;font-weight:800;color:#1e3a8a;">
+        <?php
+          $tgl = strtotime($p['estimasi_pengiriman']);
+          $hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+          $bln  = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+          echo $hari[date('w',$tgl)] . ', ' . date('j',$tgl) . ' ' . $bln[(int)date('n',$tgl)] . ' ' . date('Y',$tgl);
+        ?>
+      </div>
+      <?php
+        $selisih = (int)ceil(($tgl - time()) / 86400);
+        if ($selisih > 0): ?>
+      <div style="font-size:12px;color:#3b82f6;margin-top:2px;"><?= $selisih ?> hari lagi</div>
+      <?php elseif ($selisih === 0): ?>
+      <div style="font-size:12px;color:#16a34a;font-weight:700;margin-top:2px;">Hari ini!</div>
+      <?php else: ?>
+      <div style="font-size:12px;color:#dc2626;margin-top:2px;">Sudah lewat estimasi</div>
+      <?php endif; ?>
+    </div>
   </div>
-</div>
-<?php endif; ?>
-    <div class="order-timeline">
+  <?php endif; ?>
+
+  <div class="order-timeline">
     <div class="timeline-steps">
       <?php foreach ($statusSteps as $idx => $step):
           $cls = '';
@@ -296,7 +285,7 @@ $tabs = [
           }
         ?>
       <div class="timeline-step <?= $cls ?>">
-        <div class="timeline-dot"><?= $timelineIcon[$idx] ?></div>
+        <div class="timeline-dot"><?= $timelineIcon[$idx] ?? '' ?></div>
         <div class="timeline-label"><?= $timelineLabel[$step] ?></div>
       </div>
       <?php endforeach; ?>
@@ -307,9 +296,6 @@ $tabs = [
     <?php
       $oleh = $p['dibatal_oleh'] ?? null;
       $labelOleh = $oleh === 'admin' ? 'Admin / Supplier' : ($oleh === 'customer' ? 'Anda (Customer)' : 'Sistem');
-      $iconOleh  = $oleh === 'admin'
-        ? '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-        : '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     ?>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:<?= $p['alasan_batal'] ? '8px' : '0' ?>;">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -359,7 +345,6 @@ $tabs = [
       <?php endif; ?>
 
       <?php if ($p['status'] === 'selesai'): ?>
-      <!-- Tombol Beli Lagi -->
       <form method="POST" style="margin:0;">
         <input type="hidden" name="beli_lagi" value="1">
         <input type="hidden" name="pesanan_id" value="<?= $p['id'] ?>">
@@ -372,7 +357,6 @@ $tabs = [
       <?php endif; ?>
 
       <?php if ($p['status'] === 'menunggu_bayar'): ?>
-      <!-- Tombol Batalkan Pesanan — hanya saat menunggu bayar -->
       <button class="btn btn-sm"
         style="background:var(--red-100);color:var(--red-800);border:1px solid #fecaca;"
         onclick="document.getElementById('batal-modal-<?= $p['id'] ?>').style.display='flex'">
@@ -382,10 +366,11 @@ $tabs = [
       <?php endif; ?>
 
       <button class="btn btn-sm btn-outline-green" onclick="document.getElementById('rincian-modal-<?= $p['id'] ?>').style.display='flex'">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Rincian Pesanan
-        </button>
-        <a class="btn btn-sm btn-outline-green" href="<?= APP_URL ?>/chat.php">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Rincian Pesanan
+      </button>
+
+      <a class="btn btn-sm btn-outline-green" href="<?= APP_URL ?>/chat.php">
         <span class="icon-btn" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Chat Supplier
       </a>
     </div>
@@ -396,13 +381,11 @@ $tabs = [
 <?php if ($p['status'] === 'selesai' && !$p['sudah_rating']): ?>
 <div id="rating-modal-<?= $p['id'] ?>" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:2000; align-items:center; justify-content:center; padding:20px;">
   <div style="background:white; border-radius:var(--radius-xl); width:100%; max-width:440px; box-shadow:var(--shadow-lg); overflow:hidden;">
-    <!-- Header -->
     <div style="padding:20px 24px; border-bottom:1px solid var(--slate-100); display:flex; justify-content:space-between; align-items:center;">
       <div style="display:flex;align-items:center;gap:10px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--slate-900);">Beri Penilaian</span>
       </div>
-      <!-- Tombol X -->
       <button onclick="document.getElementById('rating-modal-<?= $p['id'] ?>').style.display='none'"
         style="width:32px;height:32px;background:var(--slate-100);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
         onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626'"
@@ -410,18 +393,13 @@ $tabs = [
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-
-    <!-- Body -->
     <div style="padding:24px;">
       <div style="font-size:13px;color:var(--slate-500);margin-bottom:4px;">Pesanan <?= sanitize($p['kode_pesanan']) ?></div>
       <div style="font-size:14px;color:var(--slate-700);margin-bottom:22px;">Bagaimana pengalaman belanja Anda?</div>
-
       <form method="POST">
         <input type="hidden" name="pesanan_id" value="<?= $p['id'] ?>">
         <input type="hidden" name="rate_pesanan" value="1">
         <input type="hidden" name="bintang" id="bintang-val-<?= $p['id'] ?>" value="0">
-
-        <!-- Bintang SVG interaktif (kiri ke kanan 1-5) -->
         <div style="display:flex;gap:6px;margin-bottom:8px;justify-content:center;" id="stars-wrap-<?= $p['id'] ?>">
           <?php for ($s = 1; $s <= 5; $s++): ?>
           <button type="button"
@@ -438,21 +416,15 @@ $tabs = [
           </button>
           <?php endfor; ?>
         </div>
-
-        <!-- Label deskripsi -->
         <div id="star-label-<?= $p['id'] ?>"
              style="text-align:center;font-size:14px;font-weight:600;color:var(--slate-400);min-height:22px;margin-bottom:20px;">
           Pilih bintang penilaian
         </div>
-
-        <!-- Komentar -->
         <div class="form-group">
           <label class="form-label">Komentar <span style="color:var(--slate-400);font-weight:400;">(opsional)</span></label>
           <textarea class="form-input" name="komentar" rows="3"
             placeholder="cth: sayurannya segar, pengiriman tepat waktu..."></textarea>
         </div>
-
-        <!-- Tombol aksi -->
         <div style="display:flex;gap:10px;margin-top:4px;">
           <button type="button" class="btn btn-outline-green" style="flex:1;"
             onclick="document.getElementById('rating-modal-<?= $p['id'] ?>').style.display='none'">
@@ -470,7 +442,7 @@ $tabs = [
 </div>
 <?php endif; ?>
 
-<!-- Modal Batalkan Pesanan — hanya untuk status menunggu_bayar -->
+<!-- Modal Batalkan Pesanan -->
 <?php if ($p['status'] === 'menunggu_bayar'): ?>
 <div id="batal-modal-<?= $p['id'] ?>"
      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:2000; align-items:center; justify-content:center; padding:20px;">
@@ -500,7 +472,6 @@ $tabs = [
         <input type="hidden" name="pesanan_id" value="<?= $p['id'] ?>">
         <div class="form-group">
           <label class="form-label">Alasan Pembatalan <span style="color:var(--slate-400);font-weight:400;">(opsional)</span></label>
-          <!-- Pilihan cepat -->
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;" id="alasan-chips-<?= $p['id'] ?>">
             <?php foreach(['Salah pilih produk','Ingin ganti produk lain','Tidak jadi beli','Lainnya'] as $opt): ?>
             <button type="button"
@@ -509,13 +480,31 @@ $tabs = [
               <?= $opt ?>
             </button>
             <?php endforeach; ?>
-        <!-- Modal Rincian Pesanan -->
+          </div>
+          <textarea class="form-input" name="alasan_batal_customer" id="alasan-txt-<?= $p['id'] ?>"
+            rows="2" placeholder="Tulis alasan pembatalan..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button type="button" class="btn btn-outline-green" style="flex:1;"
+            onclick="document.getElementById('batal-modal-<?= $p['id'] ?>').style.display='none'">
+            Kembali
+          </button>
+          <button type="submit" class="btn" style="flex:2;background:#ef4444;color:white;border:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Ya, Batalkan Pesanan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<!-- Modal Rincian Pesanan -->
 <div id="rincian-modal-<?= $p['id'] ?>"
      style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:20px;"
      onclick="if(event.target===this)this.style.display='none'">
   <div style="background:white;border-radius:20px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-    
-    <!-- Header -->
     <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1;">
       <div>
         <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.8);margin-bottom:2px;">RINCIAN PESANAN</div>
@@ -525,16 +514,11 @@ $tabs = [
       <button onclick="document.getElementById('rincian-modal-<?= $p['id'] ?>').style.display='none'"
         style="background:rgba(255,255,255,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">×</button>
     </div>
-
     <div style="padding:20px 24px;">
-
-      <!-- Status -->
       <div style="margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Status</div>
         <span class="status-badge status-<?= $p['status'] ?>"><?= $statusLabel[$p['status']] ?? $p['status'] ?></span>
       </div>
-
-      <!-- Detail Produk -->
       <div style="margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Detail Produk</div>
         <div style="background:var(--slate-50);border-radius:10px;padding:12px;">
@@ -557,8 +541,6 @@ $tabs = [
           </div>
         </div>
       </div>
-
-      <!-- Info Pengiriman -->
       <div style="margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Info Pengiriman</div>
         <div style="background:var(--slate-50);border-radius:10px;padding:12px;font-size:13px;color:var(--slate-700);display:flex;flex-direction:column;gap:6px;">
@@ -588,16 +570,12 @@ $tabs = [
           <?php endif; ?>
         </div>
       </div>
-
-      <!-- Metode Bayar -->
       <div style="margin-bottom:20px;">
         <div style="font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Metode Pembayaran</div>
         <div style="background:var(--slate-50);border-radius:10px;padding:12px;font-size:13px;font-weight:600;color:var(--slate-700);">
           <?= sanitize($p['metode_bayar'] ?? '-') ?>
         </div>
       </div>
-
-      <!-- Tombol Tutup -->
       <button onclick="document.getElementById('rincian-modal-<?= $p['id'] ?>').style.display='none'"
         style="width:100%;padding:12px;background:var(--slate-100);border:none;border-radius:10px;font-size:13px;font-weight:600;color:var(--slate-600);cursor:pointer;font-family:var(--font-body);">
         Tutup
@@ -605,31 +583,11 @@ $tabs = [
     </div>
   </div>
 </div>
-          </div>
-          <textarea class="form-input" name="alasan_batal_customer" id="alasan-txt-<?= $p['id'] ?>"
-            rows="2" placeholder="Tulis alasan pembatalan..."></textarea>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:4px;">
-          <button type="button" class="btn btn-outline-green" style="flex:1;"
-            onclick="document.getElementById('batal-modal-<?= $p['id'] ?>').style.display='none'">
-            Kembali
-          </button>
-          <button type="submit" class="btn" style="flex:2;background:#ef4444;color:white;border:none;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Ya, Batalkan Pesanan
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-<?php endif; ?>
 
 <?php if ($p['sudah_rating'] && $ratingData): ?>
 <!-- Modal Lihat Penilaian -->
 <div id="lihat-rating-<?= $p['id'] ?>" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:white;border-radius:20px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-    <!-- Header -->
     <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:24px;text-align:center;position:relative;">
       <button onclick="document.getElementById('lihat-rating-<?= $p['id'] ?>').style.display='none'"
         style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
@@ -649,7 +607,6 @@ $tabs = [
       ?>
       <div style="font-size:13px;color:rgba(255,255,255,0.9);font-weight:600;"><?= $labelBintang[$ratingData['bintang']] ?? '' ?></div>
     </div>
-    <!-- Body -->
     <div style="padding:24px;">
       <div style="font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px;">Pesanan</div>
       <div style="font-size:13px;font-weight:600;color:var(--slate-700);margin-bottom:16px;"><?= sanitize($p['kode_pesanan']) ?> · <?= date('d M Y', strtotime($p['created_at'])) ?></div>
@@ -679,9 +636,7 @@ $tabs = [
 </div>
 
 <script>
-// ── Bintang interaktif untuk modal rating ──
 function pilihAlasan(orderId, btn, teks) {
-    // Toggle chip aktif
     const chips = document.querySelectorAll('#alasan-chips-'+orderId+' button');
     chips.forEach(c => {
         c.style.background   = 'white';
@@ -691,7 +646,6 @@ function pilihAlasan(orderId, btn, teks) {
     btn.style.background  = '#fee2e2';
     btn.style.borderColor = '#ef4444';
     btn.style.color       = '#991b1b';
-    // Isi textarea
     const ta = document.getElementById('alasan-txt-'+orderId);
     if (ta) ta.value = teks === 'Lainnya' ? '' : teks;
     if (teks === 'Lainnya' && ta) ta.focus();
@@ -702,7 +656,6 @@ const starColors  = {1:'#ef4444',2:'#f97316',3:'#eab308',4:'#22c55e',5:'#16a34a'
 
 function setStar(orderId, val) {
     document.getElementById('bintang-val-' + orderId).value = val;
-    // Simpan state terpilih di setiap bintang
     for (let i = 1; i <= 5; i++) {
         const s = document.getElementById('star-' + orderId + '-' + i);
         s.dataset.selected = i <= val ? '1' : '0';
@@ -727,7 +680,6 @@ function hoverStar(orderId, val) {
 }
 
 function resetStar(orderId) {
-    // Kembali ke state terpilih
     const cur = parseInt(document.getElementById('bintang-val-' + orderId).value) || 0;
     for (let i = 1; i <= 5; i++) {
         const s = document.getElementById('star-' + orderId + '-' + i);
@@ -744,7 +696,6 @@ function resetStar(orderId) {
     }
 }
 
-// Animasi toast
 const toastStyle = document.createElement('style');
 toastStyle.textContent = `
 @keyframes toastIn  { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
@@ -752,29 +703,26 @@ toastStyle.textContent = `
 `;
 document.head.appendChild(toastStyle);
 
-// ============================================================
-// POLLING — cek perubahan status pesanan setiap 10 detik
-// ============================================================
 (function() {
     const APP_URL = '<?= APP_URL ?>';
 
     const statusLabel = {
-    menunggu_bayar      : 'Menunggu Bayar',
-    menunggu_pembayaran : 'Menunggu Pembayaran',
-    dibayar             : 'Dibayar',
-    diproses            : 'Diproses',
-    dikirim             : 'Dikirim',
-    selesai             : 'Selesai',
-    dibatalkan          : 'Dibatalkan',
+        menunggu_bayar      : 'Menunggu Bayar',
+        menunggu_pembayaran : 'Menunggu Pembayaran',
+        dibayar             : 'Dibayar',
+        diproses            : 'Diproses',
+        dikirim             : 'Dikirim',
+        selesai             : 'Selesai',
+        dibatalkan          : 'Dibatalkan',
     };
     const statusClass = {
-    menunggu_bayar      : 'status-menunggu_bayar',
-    menunggu_pembayaran : 'status-menunggu_bayar',
-    dibayar             : 'status-diproses',
-    diproses            : 'status-diproses',
-    dikirim             : 'status-dikirim',
-    selesai             : 'status-selesai',
-    dibatalkan          : 'status-dibatalkan',
+        menunggu_bayar      : 'status-menunggu_bayar',
+        menunggu_pembayaran : 'status-menunggu_bayar',
+        dibayar             : 'status-diproses',
+        diproses            : 'status-diproses',
+        dikirim             : 'status-dikirim',
+        selesai             : 'status-selesai',
+        dibatalkan          : 'status-dibatalkan',
     };
     const pesanToast = {
         diproses   : 'Pesanan Anda sedang diproses oleh supplier!',
@@ -783,18 +731,15 @@ document.head.appendChild(toastStyle);
         dibatalkan : 'Pesanan Anda telah dibatalkan.',
     };
 
-    // Ambil semua ID order card yang ada di halaman ini
     function getOrderIds() {
         return [...document.querySelectorAll('.order-card[data-id]')]
             .filter(el => {
                 const s = el.dataset.status;
-                // Hanya poll status yang masih "aktif" (bukan terminal)
                 return s !== 'selesai' && s !== 'dibatalkan';
             })
             .map(el => el.dataset.id);
     }
 
-    // Tampilkan toast notifikasi
     function showToast(msg, type) {
         const colors = {
             info    : { bg:'#1e40af', border:'#3b82f6' },
@@ -823,23 +768,19 @@ document.head.appendChild(toastStyle);
         }, 5000);
     }
 
-    // Update tampilan badge status di halaman (tanpa reload)
     function updateCard(id, newStatus) {
         const card  = document.getElementById('order-card-' + id);
         const badge = document.getElementById('badge-' + id);
         if (!card || !badge) return;
 
         const oldStatus = card.dataset.status;
-        if (oldStatus === newStatus) return; // tidak ada perubahan
+        if (oldStatus === newStatus) return;
 
-        // Update badge
         badge.className = 'status-badge ' + (statusClass[newStatus] || '');
         badge.innerHTML = statusLabel[newStatus] || newStatus;
 
-        // Update data attribute
         card.dataset.status = newStatus;
 
-        // Highlight card sebentar
         card.style.transition = 'box-shadow 0.4s, border-color 0.4s';
         card.style.boxShadow  = '0 0 0 3px rgba(22,163,74,0.35)';
         card.style.borderColor = '#22c55e';
@@ -848,23 +789,19 @@ document.head.appendChild(toastStyle);
             card.style.borderColor = '';
         }, 2500);
 
-        // Toast notif
         const type = newStatus === 'dibatalkan' ? 'danger'
                    : newStatus === 'selesai'    ? 'success'
                    : 'info';
         if (pesanToast[newStatus]) showToast(pesanToast[newStatus], type);
 
-        // Kalau jadi selesai, reload halaman setelah 2 detik
-        // supaya tombol "Beri Nilai" muncul
         if (newStatus === 'selesai' || newStatus === 'dibatalkan') {
             setTimeout(() => location.reload(), 2500);
         }
     }
 
-    // Jalankan polling
     function poll() {
         const ids = getOrderIds();
-        if (ids.length === 0) return; // semua sudah terminal, stop
+        if (ids.length === 0) return;
 
         fetch(APP_URL + '/ajax/cek_status.php?ids=' + ids.join(','))
             .then(r => r.json())
@@ -874,10 +811,9 @@ document.head.appendChild(toastStyle);
                     updateCard(id, info.status);
                 });
             })
-            .catch(() => {}); // silent fail
+            .catch(() => {});
     }
 
-    // Mulai polling setelah 3 detik, lalu setiap 10 detik
     setTimeout(() => {
         poll();
         setInterval(poll, 10000);
