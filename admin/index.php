@@ -131,8 +131,6 @@ include __DIR__ . '/includes/admin_header.php';
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:2fr 1fr; gap:24px; margin-bottom:24px; align-items:start;">
-<!-- Grafik -->
 <!-- Filter Periode -->
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
   <span style="font-size:13px;font-weight:600;color:var(--slate-500);">Periode:</span>
@@ -150,45 +148,48 @@ include __DIR__ . '/includes/admin_header.php';
   </a>
 </div>
 
+<!-- Grid Grafik + Stok -->
 <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:24px;align-items:start;">
-<!-- Grafik -->
-<div class="chart-card" style="padding:20px;">
-  <div class="chart-title" style="margin-bottom:16px;">
-    Pendapatan <?= $periode==='bulanan'?'6 Bulan':'7 Hari' ?> Terakhir
-  </div>
-  <div style="position:relative;height:220px;">
-    <canvas id="chartPendapatan"></canvas>
-  </div>
-  <div style="margin-top:20px;border-top:1px solid var(--slate-100);padding-top:16px;">
-    <div class="chart-title" style="margin-bottom:12px;">
-      Jumlah Pesanan <?= $periode==='bulanan'?'6 Bulan':'7 Hari' ?> Terakhir
-    </div>
-    <div style="position:relative;height:160px;">
-      <canvas id="chartPesanan"></canvas>
-    </div>
-  </div>
-</div>
 
-<!-- Stok Hampir Habis -->
-<div class="chart-card" style="padding:20px;">
-  <div class="chart-title">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    Stok Hampir Habis
-  </div>
-  <?php if (count($stokHabis) === 0): ?>
-  <div style="text-align:center;padding:20px;color:var(--slate-400);font-size:13px;">Semua stok mencukupi ✅</div>
-  <?php else: ?>
-  <?php foreach ($stokHabis as $s): ?>
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--slate-50);">
-    <div style="font-size:13px;font-weight:600;color:var(--slate-700);"><?= sanitize($s['nama']) ?></div>
-    <div style="font-size:12px;font-weight:700;color:<?= $s['stok']==0?'#ef4444':'#f59e0b' ?>;">
-      <?= $s['stok']==0?'Habis':$s['stok'].' kg' ?>
+  <!-- Grafik -->
+  <div class="chart-card" style="padding:20px;">
+    <div class="chart-title" style="margin-bottom:16px;">
+      Pendapatan <?= $periode==='bulanan'?'6 Bulan':'7 Hari' ?> Terakhir
+    </div>
+    <div style="position:relative;height:220px;">
+      <canvas id="chartPendapatan"></canvas>
+    </div>
+    <div style="margin-top:20px;border-top:1px solid var(--slate-100);padding-top:16px;">
+      <div class="chart-title" style="margin-bottom:12px;">
+        Jumlah Pesanan <?= $periode==='bulanan'?'6 Bulan':'7 Hari' ?> Terakhir
+      </div>
+      <div style="position:relative;height:160px;">
+        <canvas id="chartPesanan"></canvas>
+      </div>
     </div>
   </div>
-  <?php endforeach; ?>
-  <a href="produk.php" class="btn btn-sm btn-outline-green btn-full" style="margin-top:14px;">Kelola Produk</a>
-  <?php endif; ?>
-</div>
+
+  <!-- Stok Hampir Habis -->
+  <div class="chart-card" style="padding:20px;">
+    <div class="chart-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Stok Hampir Habis
+    </div>
+    <?php if (count($stokHabis) === 0): ?>
+    <div style="text-align:center;padding:20px;color:var(--slate-400);font-size:13px;">Semua stok mencukupi ✅</div>
+    <?php else: ?>
+    <?php foreach ($stokHabis as $s): ?>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--slate-50);">
+      <div style="font-size:13px;font-weight:600;color:var(--slate-700);"><?= sanitize($s['nama']) ?></div>
+      <div style="font-size:12px;font-weight:700;color:<?= $s['stok']==0?'#ef4444':'#f59e0b' ?>;">
+        <?= $s['stok']==0?'Habis':$s['stok'].' kg' ?>
+      </div>
+    </div>
+    <?php endforeach; ?>
+    <a href="produk.php" class="btn btn-sm btn-outline-green btn-full" style="margin-top:14px;">Kelola Produk</a>
+    <?php endif; ?>
+  </div>
+
 </div>
 
 <!-- Tabel Pesanan Terbaru -->
